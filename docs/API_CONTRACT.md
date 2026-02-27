@@ -1,3 +1,9 @@
+# Uber Clone API Contract
+
+Single Source of Truth for Backend & Frontend Integration
+
+⚠️ Do NOT modify endpoints without updating all layers
+
 API Contract Design - Uber Clone
 This document serves as the Single Source of Truth for all API communication.
 
