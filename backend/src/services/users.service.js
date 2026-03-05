@@ -1,9 +1,7 @@
-const { createClient } = require('@supabase/supabase-js');
+const { Pool } = require('pg');
 
-// Assuming these are loaded from environment variables
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Initialize Pool
+const pool = new Pool();
 
 /**
  * Service: Sync Clerk User
@@ -13,54 +11,38 @@ const syncUser = async (user) => {
   const { id, email, name, phone } = user;
 
   // Check if user already exists
-  const { data: existingUser } = await supabase
-    .from('users')
-    .select('id')
-    .eq('id', id)
-    .single();
+  const existingUserQuery = 'SELECT id FROM users WHERE id = $1';
+  const { rows: existingRows } = await pool.query(existingUserQuery, [id]);
 
-  if (existingUser) {
-    return existingUser; // Return existing user, do nothing
+  if (existingRows.length > 0) {
+    return existingRows[0]; // Return existing user, do nothing
   }
 
   // Insert new user
-  const { data, error } = await supabase
-    .from('users')
-    .insert([
-      {
-        id,
-        email,
-        name,
-        phone,
-        role: 'rider', // Default role
-        created_at: new Date(),
-      },
-    ])
-    .select()
-    .single();
+  const insertQuery = `
+    INSERT INTO users (id, email, name, phone, role, created_at)
+    VALUES ($1, $2, $3, $4, 'rider', NOW())
+    RETURNING *;
+  `;
+  const insertValues = [id, email, name, phone];
 
-  if (error) {
-    throw new Error(error.message);
-  }
+  const { rows: newRows } = await pool.query(insertQuery, insertValues);
 
-  return data;
+  return newRows[0];
 };
 
 /**
  * Service: Get User Profile
  */
 const getUserProfile = async (userId) => {
-  const { data, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', userId)
-    .single();
+  const query = 'SELECT * FROM users WHERE id = $1';
+  const { rows } = await pool.query(query, [userId]);
 
-  if (error) {
-    throw new Error(error.message);
+  if (rows.length === 0) {
+    throw new Error('User not found');
   }
 
-  return data;
+  return rows[0];
 };
 
 /**
@@ -69,47 +51,54 @@ const getUserProfile = async (userId) => {
  */
 const updateUserProfile = async (userId, updates) => {
   const { name, phone } = updates;
-  const allowedUpdates = {};
+  const setClauses = [];
+  const values = [];
+  let paramIndex = 1;
 
-  if (name !== undefined) allowedUpdates.name = name;
-  if (phone !== undefined) allowedUpdates.phone = phone;
+  if (name !== undefined) {
+    setClauses.push(`name = $${paramIndex}`);
+    values.push(name);
+    paramIndex++;
+  }
+  if (phone !== undefined) {
+    setClauses.push(`phone = $${paramIndex}`);
+    values.push(phone);
+    paramIndex++;
+  }
 
-  if (Object.keys(allowedUpdates).length === 0) {
+  if (setClauses.length === 0) {
     throw new Error('No valid fields to update');
   }
 
-  const { data, error } = await supabase
-    .from('users')
-    .update(allowedUpdates)
-    .eq('id', userId)
-    .select()
-    .single();
+  values.push(userId);
+  const query = `
+    UPDATE users
+    SET ${setClauses.join(', ')}
+    WHERE id = $${paramIndex}
+    RETURNING *;
+  `;
 
-  if (error) {
-    throw new Error(error.message);
+  const { rows } = await pool.query(query, values);
+
+  if (rows.length === 0) {
+    throw new Error('User not found');
   }
 
-  return data;
+  return rows[0];
 };
 
 /**
  * Service: Get User By ID
  */
 const getUserById = async (id) => {
-  const { data, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', id)
-    .single();
+  const query = 'SELECT * FROM users WHERE id = $1';
+  const { rows } = await pool.query(query, [id]);
 
-  if (error) {
-    if (error.code === 'PGRST116') { // Supabase error for no rows found
-      throw new Error('User not found');
-    }
-    throw new Error(error.message);
+  if (rows.length === 0) {
+    throw new Error('User not found');
   }
 
-  return data;
+  return rows[0];
 };
 
 module.exports = {

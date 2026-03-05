@@ -1,9 +1,7 @@
-const { createClient } = require('@supabase/supabase-js');
+const { Pool } = require('pg');
 
-// Assuming these are loaded from environment variables
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Initialize Pool
+const pool = new Pool();
 
 const RIDE_STATUS = {
   SEARCHING: 'searching',
@@ -61,9 +59,8 @@ const getFareEstimate = async (pickupLat, pickupLng, dropLat, dropLng) => {
     return {
       type,
       price: parseFloat(price.toFixed(2)),
-      eta: Math.ceil(durationMins), // Estimated time to arrival at destination or pickup? Contract says "eta" usually means pickup eta, but here it seems to be ride duration or pickup eta. Given context of "fare estimate", usually includes duration. Let's assume standard behavior. But "eta" in response usually implies "how long until driver arrives". Let's stick to a mock value for driver arrival ETA (e.g., 5-10 mins) or use the calculated travel time if that's what's meant. 
+      eta: Math.ceil(durationMins), 
       // API Contract: response: [{ "type": string, "price": number, "eta": number, "distance": number }]
-      // "eta" often means "time to pickup". I will simulate a random pickup ETA for now as we don't have driver locations.
       eta: Math.floor(Math.random() * 10) + 2, 
       distance: parseFloat(distance.toFixed(2)),
     };
@@ -85,18 +82,17 @@ const requestRide = async (riderId, { pickup, drop, rideType, promoCode }) => {
   // 2. Validate Promo Code if present
   let appliedPromoCode = null;
   if (promoCode) {
-    const { data: promo, error: promoError } = await supabase
-      .from('promo_codes')
-      .select('*')
-      .eq('code', promoCode)
-      .single();
+    const promoQuery = 'SELECT * FROM promo_codes WHERE code = $1';
+    const { rows: promoRows } = await pool.query(promoQuery, [promoCode]);
 
-    if (promoError || !promo) {
+    if (promoRows.length === 0) {
       throw new Error('Invalid promo code');
     }
-
-    if (!promo.is_active) throw new Error('Promo code is inactive');
+    const promo = promoRows[0];
+    
+    // Check expiration using DB timestamp comparison or JavaScript
     if (promo.expires_at && new Date(promo.expires_at) < new Date()) throw new Error('Promo code expired');
+    if (typeof promo.is_active !== 'undefined' && !promo.is_active) throw new Error('Promo code is inactive');
 
     if (promo.type === 'percentage') {
        estimatedFare = estimatedFare * (1 - promo.discount / 100);
@@ -107,29 +103,25 @@ const requestRide = async (riderId, { pickup, drop, rideType, promoCode }) => {
   }
 
   // 3. Create Ride in DB
-  const { data: ride, error } = await supabase
-    .from('rides')
-    .insert({
-      rider_id: riderId,
-      status: RIDE_STATUS.SEARCHING,
-      ride_type: rideType,
-      pickup_lat: pickup.lat,
-      pickup_lng: pickup.lng,
-      pickup_address: pickup.address,
-      drop_lat: drop.lat,
-      drop_lng: drop.lng,
-      drop_address: drop.address,
-      distance: parseFloat(distance.toFixed(2)),
-      estimated_fare: parseFloat(estimatedFare.toFixed(2)),
-      promo_code: appliedPromoCode,
-      requested_at: new Date().toISOString(),
-    })
-    .select()
-    .single();
+  const insertQuery = `
+    INSERT INTO rides (
+      rider_id, status, ride_type, 
+      pickup_lat, pickup_lng, pickup_address,
+      drop_lat, drop_lng, drop_address,
+      distance, estimated_fare, promo_code, requested_at
+    )
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
+    RETURNING id, status, rider_id;
+  `;
+  const values = [
+    riderId, RIDE_STATUS.SEARCHING, rideType,
+    pickup.lat, pickup.lng, pickup.address,
+    drop.lat, drop.lng, drop.address,
+    parseFloat(distance.toFixed(2)), parseFloat(estimatedFare.toFixed(2)), appliedPromoCode
+  ];
 
-  if (error) {
-    throw new Error(`Database error: ${error.message}`);
-  }
+  const { rows } = await pool.query(insertQuery, values);
+  const ride = rows[0];
 
   return {
     rideId: ride.id,
@@ -142,125 +134,121 @@ const requestRide = async (riderId, { pickup, drop, rideType, promoCode }) => {
  * Service: Get Ride by ID
  */
 const getRideById = async (rideId) => {
-  const { data: ride, error } = await supabase
-    .from('rides')
-    .select(`
-      *,
-      driver:driver_id (
-        *,
-        user:user_id (name, phone, role)
-      ),
-      rider:rider_id (name, phone)
-    `)
-    .eq('id', rideId)
-    .single();
+  const query = `
+    SELECT 
+      r.*,
+      row_to_json(d.*) as driver,
+      row_to_json(u.*) as rider
+    FROM rides r
+    LEFT JOIN users d ON r.driver_id = d.id
+    LEFT JOIN users u ON r.rider_id = u.id
+    WHERE r.id = $1
+  `;
+  const { rows } = await pool.query(query, [rideId]);
 
-  if (error) {
+  if (rows.length === 0) {
     throw new Error('Ride not found');
   }
 
-  return {
-    ride,
-    driver: ride.driver || null,
-  };
+  // The simplified join returns null for driver if driver_id is null
+  return rows[0];
 };
 
 /**
  * Service: Update Ride Status
  */
 const updateRideStatus = async (rideId, userId, userRole, newStatus) => {
-  // 1. Fetch current ride
-  const { data: ride, error: fetchError } = await supabase
-    .from('rides')
-    .select('*')
-    .eq('id', rideId)
-    .single();
-
-  if (fetchError || !ride) {
-    throw new Error('Ride not found');
-  }
-
-  // 2. Validate State Transitions & Permissions
-  const currentStatus = ride.status;
-
-  // Rider Cancellation
-  if (newStatus === RIDE_STATUS.CANCELLED) {
-    if (userRole === 'rider' && ride.rider_id !== userId) {
-      throw new Error('Unauthorized');
-    }
-    // Drivers can also cancel logic can be added here if needed, but requirements say "Rider can only cancel" for the PATCH logic 
-    // Wait, prompt says "Rider can only cancel". This implies Rider can perform 'cancelled' status update.
-    // Does it imply Driver CANNOT cancel?
-    // Prompt: "Driver can update ride status. Rider can only cancel"
-    // So if Rider calls this, newStatus MUST be 'cancelled'.
-    if (userRole === 'rider' && newStatus !== RIDE_STATUS.CANCELLED) {
-      throw new Error('Riders can only cancel rides');
-    }
-  } else {
-    // For other statuses (accepted, arriving, started, completed), it must be a Driver
-    if (userRole !== 'driver') {
-      throw new Error('Only drivers can update status to ' + newStatus);
-    }
-    // Check if the driver is the assigned driver (unless accepting)
-    if (newStatus === RIDE_STATUS.ACCEPTED) {
-       // Driver accepting request
-       if (currentStatus !== RIDE_STATUS.SEARCHING) {
-         throw new Error('Ride is not available for acceptance');
-       }
-       // Assign driver
-       const { error: updateError } = await supabase
-         .from('rides')
-         .update({ 
-            status: newStatus,
-            driver_id: userId,
-            accepted_at: new Date().toISOString()
-         })
-         .eq('id', rideId);
-        
-       if (updateError) throw updateError;
-       return { success: true, newStatus };
-    }
-
-    // For subsequent statuses, verify driver ownership
-    if (ride.driver_id !== userId) {
-      throw new Error('Not authorized for this ride');
-    }
-  }
-
-  // Validate lifecycle flow
-  // searching -> accepted
-  // accepted -> arriving
-  // arriving -> started
-  // started -> completed
-  // * -> cancelled
+  const client = await pool.connect();
   
-  const validTransitions = {
-    [RIDE_STATUS.SEARCHING]: [RIDE_STATUS.ACCEPTED, RIDE_STATUS.CANCELLED],
-    [RIDE_STATUS.ACCEPTED]: [RIDE_STATUS.ARRIVING, RIDE_STATUS.CANCELLED],
-    [RIDE_STATUS.ARRIVING]: [RIDE_STATUS.STARTED, RIDE_STATUS.CANCELLED],
-    [RIDE_STATUS.STARTED]: [RIDE_STATUS.COMPLETED], // Cancelled during ride? maybe.
-    [RIDE_STATUS.COMPLETED]: [],
-    [RIDE_STATUS.CANCELLED]: [],
-  };
+  try {
+    await client.query('BEGIN');
 
-  if (!validTransitions[currentStatus].includes(newStatus)) {
-    throw new Error(`Invalid status transition from ${currentStatus} to ${newStatus}`);
+    // 1. Fetch current ride
+    const rideQuery = 'SELECT * FROM rides WHERE id = $1 FOR UPDATE';
+    const { rows: rides } = await client.query(rideQuery, [rideId]);
+
+    if (rides.length === 0) {
+      throw new Error('Ride not found');
+    }
+    const ride = rides[0];
+    const currentStatus = ride.status;
+
+    // 2. Validate State Transitions & Permissions
+    // Rider Cancellation
+    if (newStatus === RIDE_STATUS.CANCELLED) {
+      // Logic from before: rider can cancel only their own ride.
+       if (userRole === 'rider' && ride.rider_id !== userId) {
+         throw new Error('Unauthorized');
+       }
+       if (userRole === 'rider' && newStatus !== RIDE_STATUS.CANCELLED) {
+         throw new Error('Riders can only cancel rides');
+       }
+    } else {
+      // Driver updates
+      if (userRole !== 'driver') {
+        throw new Error('Only drivers can update status to ' + newStatus);
+      }
+      
+      // Accepting a ride
+      if (newStatus === RIDE_STATUS.ACCEPTED) {
+         if (currentStatus !== RIDE_STATUS.SEARCHING) {
+           throw new Error('Ride is not available for acceptance');
+         }
+         // Assign driver
+         await client.query(
+           'UPDATE rides SET status = $1, driver_id = $2, accepted_at = NOW() WHERE id = $3',
+           [newStatus, userId, rideId]
+         );
+         await client.query('COMMIT');
+         return { success: true, newStatus };
+      }
+
+      // Other updates (Arriving, Started, Completed)
+      // Check if this user is the assigned driver
+      if (ride.driver_id !== userId) {
+        throw new Error('Not authorized for this ride');
+      }
+    }
+
+    const validTransitions = {
+      [RIDE_STATUS.SEARCHING]: [RIDE_STATUS.ACCEPTED, RIDE_STATUS.CANCELLED],
+      [RIDE_STATUS.ACCEPTED]: [RIDE_STATUS.ARRIVING, RIDE_STATUS.CANCELLED],
+      [RIDE_STATUS.ARRIVING]: [RIDE_STATUS.STARTED, RIDE_STATUS.CANCELLED],
+      [RIDE_STATUS.STARTED]: [RIDE_STATUS.COMPLETED], 
+      [RIDE_STATUS.COMPLETED]: [],
+      [RIDE_STATUS.CANCELLED]: [],
+    };
+
+    if (!validTransitions[currentStatus] || !validTransitions[currentStatus].includes(newStatus)) {
+      throw new Error(`Invalid status transition from ${currentStatus} to ${newStatus}`);
+    }
+
+    // Build update query
+    let updateQuery = 'UPDATE rides SET status = $1';
+    const updateValues = [newStatus];
+    let valueIndex = 2;
+
+    if (newStatus === RIDE_STATUS.STARTED) {
+      updateQuery += `, started_at = NOW()`;
+    }
+    if (newStatus === RIDE_STATUS.COMPLETED) {
+      updateQuery += `, completed_at = NOW()`;
+    }
+
+    updateQuery += ` WHERE id = $${valueIndex}`;
+    updateValues.push(rideId);
+
+    await client.query(updateQuery, updateValues);
+    await client.query('COMMIT');
+
+    return { success: true, newStatus };
+
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
   }
-
-  const updates = { status: newStatus };
-  if (newStatus === RIDE_STATUS.STARTED) updates.started_at = new Date().toISOString();
-  if (newStatus === RIDE_STATUS.COMPLETED) updates.completed_at = new Date().toISOString();
-
-  const { error: updateError } = await supabase
-    .from('rides')
-    .update(updates)
-    .eq('id', rideId);
-
-  if (updateError) {
-    throw new Error(`Failed to update status: ${updateError.message}`);
-  }
-
-  return { success: true, newStatus };
 };
 
 module.exports = {

@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const paymentsRoutes = require('./routes/payments.routes');
+const ratingsRoutes = require('./routes/ratings.routes');
 
 const app = express();
 
@@ -12,6 +13,9 @@ app.use(cors());
 app.use('/payments', paymentsRoutes);
 
 app.use(express.json());
+
+// Routes
+app.use('/ratings', ratingsRoutes);
 
 // Health Check & Root Route
 app.get('/', (req, res) => {
