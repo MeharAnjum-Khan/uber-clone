@@ -4,6 +4,7 @@ const paymentsRoutes = require('./routes/payments.routes');
 const ratingsRoutes = require('./routes/ratings.routes');
 const sosRoutes = require('./routes/sos.routes');
 const messagesRoutes = require('./routes/messages.routes');
+const promoRoutes = require('./routes/promo.routes');
 
 const app = express();
 
@@ -20,6 +21,7 @@ app.use(express.json());
 app.use('/ratings', ratingsRoutes);
 app.use('/sos', sosRoutes);
 app.use('/messages', messagesRoutes);
+app.use('/promo-codes', promoRoutes);
 
 // Health Check & Root Route
 app.get('/', (req, res) => {
