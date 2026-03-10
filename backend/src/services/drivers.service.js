@@ -1,8 +1,12 @@
 const { Pool } = require('pg');
 
-// Initialize Pool using environment variables
-// Expects PGHOST, PGUSER, PGDATABASE, PGPASSWORD, PGPORT or DATABASE_URL to be set
-const pool = new Pool();
+// Initialize Pool
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
 
 /**
  * Service: Register Driver

@@ -2,7 +2,12 @@ const { Pool } = require('pg');
 const Stripe = require('stripe');
 
 // Initialize Pool
-const pool = new Pool();
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
 
 // Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);

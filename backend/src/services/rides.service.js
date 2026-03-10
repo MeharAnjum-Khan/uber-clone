@@ -1,7 +1,13 @@
 const { Pool } = require('pg');
 
+
 // Initialize Pool
-const pool = new Pool();
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
 
 const RIDE_STATUS = {
   SEARCHING: 'searching',
@@ -59,9 +65,8 @@ const getFareEstimate = async (pickupLat, pickupLng, dropLat, dropLng) => {
     return {
       type,
       price: parseFloat(price.toFixed(2)),
-      eta: Math.ceil(durationMins), 
       // API Contract: response: [{ "type": string, "price": number, "eta": number, "distance": number }]
-      eta: Math.floor(Math.random() * 10) + 2, 
+      eta: Math.floor(Math.random() * 10) + 2,
       distance: parseFloat(distance.toFixed(2)),
     };
   });
@@ -137,8 +142,8 @@ const getRideById = async (rideId) => {
   const query = `
     SELECT 
       r.*,
-      row_to_json(d.*) as driver,
-      row_to_json(u.*) as rider
+      row_to_json(d) as driver,
+      row_to_json(u) as rider
     FROM rides r
     LEFT JOIN users d ON r.driver_id = d.id
     LEFT JOIN users u ON r.rider_id = u.id
@@ -176,7 +181,6 @@ const updateRideStatus = async (rideId, userId, userRole, newStatus) => {
     // 2. Validate State Transitions & Permissions
     // Rider Cancellation
     if (newStatus === RIDE_STATUS.CANCELLED) {
-      // Logic from before: rider can cancel only their own ride.
        if (userRole === 'rider' && ride.rider_id !== userId) {
          throw new Error('Unauthorized');
        }
@@ -189,22 +193,20 @@ const updateRideStatus = async (rideId, userId, userRole, newStatus) => {
         throw new Error('Only drivers can update status to ' + newStatus);
       }
       
-      // Accepting a ride
       if (newStatus === RIDE_STATUS.ACCEPTED) {
          if (currentStatus !== RIDE_STATUS.SEARCHING) {
            throw new Error('Ride is not available for acceptance');
          }
-         // Assign driver
+
          await client.query(
            'UPDATE rides SET status = $1, driver_id = $2, accepted_at = NOW() WHERE id = $3',
            [newStatus, userId, rideId]
          );
+
          await client.query('COMMIT');
          return { success: true, newStatus };
       }
 
-      // Other updates (Arriving, Started, Completed)
-      // Check if this user is the assigned driver
       if (ride.driver_id !== userId) {
         throw new Error('Not authorized for this ride');
       }
@@ -223,7 +225,6 @@ const updateRideStatus = async (rideId, userId, userRole, newStatus) => {
       throw new Error(`Invalid status transition from ${currentStatus} to ${newStatus}`);
     }
 
-    // Build update query
     let updateQuery = 'UPDATE rides SET status = $1';
     const updateValues = [newStatus];
     let valueIndex = 2;
@@ -231,6 +232,7 @@ const updateRideStatus = async (rideId, userId, userRole, newStatus) => {
     if (newStatus === RIDE_STATUS.STARTED) {
       updateQuery += `, started_at = NOW()`;
     }
+
     if (newStatus === RIDE_STATUS.COMPLETED) {
       updateQuery += `, completed_at = NOW()`;
     }

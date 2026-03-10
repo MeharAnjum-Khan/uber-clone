@@ -21,14 +21,15 @@ This schema is designed based on the requirements specified in "API_CONTRACT.md"
 
 ## 2. drivers table
 
-| Column          | Type                      | Constraints               | Description                                          |
-| :-------------- | :------------------------ | :------------------------ | :--------------------------------------------------- |
-| user_id         | VARCHAR(255)              | PRIMARY KEY, FK(users.id) | Links to user profile                                |
-| status          | ENUM('online', 'offline') | DEFAULT 'offline'         |                                                      |
+| Column          | Type                      | Constraints               | Description                                            |
+| --------------- | ------------------------- | ------------------------- | ------------------------------------------------------ |
+| user_id         | VARCHAR(255)              | PRIMARY KEY, FK(users.id) | Links to user profile                                  |
+| status          | ENUM('online', 'offline') | DEFAULT 'offline'         | Driver availability status                             |
 | vehicle_details | JSONB                     |                           | { "make": string, "model": string, "plate": string } |
-| last_lat        | FLOAT                     |                           | For nearby driver tracking                           |
-| last_lng        | FLOAT                     |                           | For nearby driver tracking                           |
-| last_heartbeat  | TIMESTAMP                 |                           | Last time driver status was updated                  |
+| last_lat        | FLOAT                     |                           | For nearby driver tracking                             |
+| last_lng        | FLOAT                     |                           | For nearby driver tracking                             |
+| last_heartbeat  | TIMESTAMP                 |                           | Last time driver status was updated                    |
+
 
 ## 3. rides table
 
