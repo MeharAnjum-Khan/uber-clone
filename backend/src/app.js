@@ -5,6 +5,10 @@ const ratingsRoutes = require('./routes/ratings.routes');
 const sosRoutes = require('./routes/sos.routes');
 const messagesRoutes = require('./routes/messages.routes');
 const promoRoutes = require('./routes/promo.routes');
+const usersRoutes = require('./routes/users.routes');
+const driversRoutes = require('./routes/drivers.routes');
+const ridesRoutes = require('./routes/rides.routes');
+const supportRoutes = require('./routes/support.routes');
 
 const app = express();
 
@@ -17,11 +21,17 @@ app.use('/payments', paymentsRoutes);
 
 app.use(express.json());
 
-// Routes
+// Main App Routes
+app.use('/users', usersRoutes);
+app.use('/drivers', driversRoutes);
+app.use('/rides', ridesRoutes);
+
+// Other Module Routes
 app.use('/ratings', ratingsRoutes);
 app.use('/sos', sosRoutes);
 app.use('/messages', messagesRoutes);
 app.use('/promo-codes', promoRoutes);
+app.use('/support', supportRoutes);
 
 // Health Check & Root Route
 app.get('/', (req, res) => {

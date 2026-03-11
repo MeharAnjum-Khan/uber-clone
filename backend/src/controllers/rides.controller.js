@@ -1,26 +1,5 @@
 const ridesService = require('../services/rides.service');
 
-const getEstimate = async (req, res) => {
-  try {
-    const { pickupLat, pickupLng, dropLat, dropLng } = req.query;
-
-    if (!pickupLat || !pickupLng || !dropLat || !dropLng) {
-      return res.status(400).json({ error: 'Missing coordinates' });
-    }
-
-    const estimates = await ridesService.getFareEstimate(
-      parseFloat(pickupLat),
-      parseFloat(pickupLng),
-      parseFloat(dropLat),
-      parseFloat(dropLng)
-    );
-
-    res.json(estimates);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
 const requestRide = async (req, res) => {
   try {
     const { pickup, drop, rideType, promoCode } = req.body;
@@ -34,6 +13,9 @@ const requestRide = async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
+    // Set app instance for socket emissions
+    ridesService.setAppInstance(req.app);
+
     const result = await ridesService.requestRide(riderId, {
       pickup,
       drop,
@@ -42,6 +24,21 @@ const requestRide = async (req, res) => {
     });
 
     res.status(201).json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const getHistory = async (req, res) => {
+  try {
+    if (!req.user || !req.user.id) {
+       return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const userId = req.user.id;
+    const userRole = req.user.role || 'rider';
+
+    const history = await ridesService.getRideHistory(userId, userRole);
+    res.json(history);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -75,6 +72,9 @@ const updateStatus = async (req, res) => {
       return res.status(400).json({ error: 'Status is required' });
     }
 
+    // Set app instance for socket emissions
+    ridesService.setAppInstance(req.app);
+
     const result = await ridesService.updateRideStatus(id, userId, userRole, status);
     res.json(result);
   } catch (error) {
@@ -91,6 +91,7 @@ const updateStatus = async (req, res) => {
 module.exports = {
   getEstimate,
   requestRide,
+  getHistory,
   getRide,
   updateStatus,
 };

@@ -1,5 +1,10 @@
 const { Pool } = require('pg');
 
+let appInstance;
+
+const setAppInstance = (app) => {
+  appInstance = app;
+};
 
 // Initialize Pool
 const pool = new Pool({
@@ -128,6 +133,18 @@ const requestRide = async (riderId, { pickup, drop, rideType, promoCode }) => {
   const { rows } = await pool.query(insertQuery, values);
   const ride = rows[0];
 
+  // Notify nearby drivers via Socket.io if app instance exists
+  const io = appInstance && appInstance.get && appInstance.get('io');
+  if (io) {
+    io.emit('ride_requested', {
+      rideId: ride.id,
+      pickup: pickup.address,
+      drop: drop.address,
+      rideType,
+      estimatedFare: parseFloat(estimatedFare.toFixed(2))
+    });
+  }
+
   return {
     rideId: ride.id,
     status: ride.status,
@@ -157,6 +174,26 @@ const getRideById = async (rideId) => {
 
   // The simplified join returns null for driver if driver_id is null
   return rows[0];
+};
+
+/**
+ * Service: Get Ride History for a User
+ */
+const getRideHistory = async (userId, userRole) => {
+  const column = userRole === 'driver' ? 'driver_id' : 'rider_id';
+  const query = `
+    SELECT 
+      r.*,
+      row_to_json(d) as driver,
+      row_to_json(u) as rider
+    FROM rides r
+    LEFT JOIN users d ON r.driver_id = d.id
+    LEFT JOIN users u ON r.rider_id = u.id
+    WHERE r.${column} = $1
+    ORDER BY r.requested_at DESC
+  `;
+  const { rows } = await pool.query(query, [userId]);
+  return rows;
 };
 
 /**
@@ -243,6 +280,16 @@ const updateRideStatus = async (rideId, userId, userRole, newStatus) => {
     await client.query(updateQuery, updateValues);
     await client.query('COMMIT');
 
+    // Notify rider/driver of status update via Socket.io
+    const io = appInstance && appInstance.get && appInstance.get('io');
+    if (io) {
+      io.to(`ride_${rideId}`).emit('ride_status_updated', {
+        rideId,
+        newStatus,
+        timestamp: new Date()
+      });
+    }
+
     return { success: true, newStatus };
 
   } catch (e) {
@@ -257,5 +304,7 @@ module.exports = {
   getFareEstimate,
   requestRide,
   getRideById,
+  getRideHistory,
   updateRideStatus,
+  setAppInstance,
 };
