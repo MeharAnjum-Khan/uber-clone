@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const paymentsRoutes = require('./routes/payments.routes');
+const webhooksRoutes = require('./routes/webhooks.routes');
 const ratingsRoutes = require('./routes/ratings.routes');
 const sosRoutes = require('./routes/sos.routes');
 const messagesRoutes = require('./routes/messages.routes');
@@ -18,6 +19,8 @@ app.use(cors());
 // Webhook handling - must be before express.json()
 // The payments router has its own specific parser for the webhook route
 app.use('/payments', paymentsRoutes);
+// Clerk & other webhook endpoints
+app.use('/webhooks', webhooksRoutes);
 
 app.use(express.json());
 
