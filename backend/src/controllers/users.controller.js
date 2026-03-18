@@ -2,10 +2,20 @@ const usersService = require('../services/users.service');
 
 const syncUser = async (req, res) => {
   try {
-    if (!req.user || !req.user.id) {
-       return res.status(401).json({ error: 'Unauthorized: No user found' });
+    const authUserId = req.auth && req.auth.userId;
+    const bodyClerkId = req.body && req.body.clerk_id;
+
+    // If both are present and don't match, something is wrong
+    if (authUserId && bodyClerkId && authUserId !== bodyClerkId) {
+      return res.status(401).json({ error: 'Unauthorized: Mismatched user' });
     }
-    const id = req.user.id;
+
+    const id = authUserId || bodyClerkId;
+
+    if (!id) {
+      return res.status(401).json({ error: 'Unauthorized: No user found' });
+    }
+
     const { email, name, phone } = req.body;
 
     if (!email) {

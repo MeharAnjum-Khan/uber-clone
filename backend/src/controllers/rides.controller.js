@@ -88,6 +88,27 @@ const updateStatus = async (req, res) => {
   }
 };
 
+const getEstimate = async (req, res) => {
+  try {
+    const { pickupLat, pickupLng, dropLat, dropLng } = req.query;
+
+    if (!pickupLat || !pickupLng || !dropLat || !dropLng) {
+      return res.status(400).json({ error: 'pickupLat, pickupLng, dropLat and dropLng are required' });
+    }
+
+    const estimates = await ridesService.getFareEstimate(
+      parseFloat(pickupLat),
+      parseFloat(pickupLng),
+      parseFloat(dropLat),
+      parseFloat(dropLng)
+    );
+
+    res.json(estimates);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   getEstimate,
   requestRide,

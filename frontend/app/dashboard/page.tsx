@@ -41,8 +41,15 @@ export default function DashboardPage() {
           else setRecentRides([]);
         }
       } catch (err: any) {
-        console.error('Dashboard error', err);
-        if (mounted) setError('Failed to load dashboard.');
+        console.warn('Dashboard error', err);
+
+        const friendlyMessage =
+          err?.error ||
+          err?.message ||
+          (typeof err === 'string' ? err : null) ||
+          'Failed to load dashboard.';
+
+        if (mounted) setError(friendlyMessage);
       } finally {
         if (mounted) setLoading(false);
       }

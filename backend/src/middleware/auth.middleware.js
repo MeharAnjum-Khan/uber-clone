@@ -20,13 +20,15 @@ const authMiddleware = async (req, res, next) => {
     const clerkId = req.auth.userId;
 
     // 2. Fetch our internal DB user based on Clerk ID
-    const query = 'SELECT id, email, role FROM users WHERE clerk_id = $1';
+    // In our schema, the Clerk user ID is stored directly in the primary key column `id`.
+    const query = 'SELECT id, email, role FROM users WHERE id = $1';
     const { rows } = await pool.query(query, [clerkId]);
 
     if (rows.length === 0) {
-      // User is authenticated by Clerk but not yet synced in our DB
-      // We can either return 401 or attach basic info to force a sync
-      req.user = { clerk_id: clerkId, needsSync: true };
+      // User is authenticated by Clerk but not yet present in our DB.
+      // Attach a minimal user object so downstream handlers can still use the Clerk ID,
+      // and mark that a sync is needed.
+      req.user = { id: clerkId, email: null, role: 'rider', needsSync: true };
     } else {
       // Attach full internal user object to request
       req.user = rows[0];

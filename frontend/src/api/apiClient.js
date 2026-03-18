@@ -33,8 +33,25 @@ export const handleApiCall = async (apiFunc) => {
     const response = await apiFunc();
     return response.data;
   } catch (error) {
-    console.error('API Error:', error.response?.data || error.message);
-    throw error.response?.data || { error: 'Something went wrong. Please try again later.' };
+    const axiosError = error || {};
+    const responseData = axiosError.response?.data;
+    const status = axiosError.response?.status;
+    const url = axiosError.config?.url;
+
+    const message =
+      (responseData && (responseData.error || responseData.message)) ||
+      axiosError.message ||
+      'Something went wrong. Please try again later.';
+
+    const normalizedError = {
+      status: status ?? null,
+      url: url ?? null,
+      error: message,
+      data: responseData ?? null,
+    };
+
+    console.warn('API Error:', normalizedError);
+    throw normalizedError;
   }
 };
 

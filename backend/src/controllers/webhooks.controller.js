@@ -61,6 +61,11 @@ const handleClerkWebhook = async (req, res) => {
 
     const phone = user.phone_number || user.phone || null;
 
+    if (!email) {
+      console.warn('Clerk user has no email; skipping DB sync');
+      return res.status(200).send('ok');
+    }
+
     await usersService.syncUser({ id: user.id, email, name, phone });
     return res.status(200).send('ok');
   } catch (error) {
