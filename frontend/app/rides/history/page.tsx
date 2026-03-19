@@ -39,13 +39,15 @@ export default function RideHistoryPage() {
       } else {
         setRides([]);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.warn("Ride history error", err);
-      const message =
-        err?.error ||
-        err?.message ||
-        (typeof err === "string" ? err : null) ||
-        "Failed to load ride history.";
+      let message = "Failed to load ride history.";
+      if (typeof err === "object" && err !== null) {
+        const maybeError = err as { error?: string; message?: string };
+        message = maybeError.error || maybeError.message || message;
+      } else if (typeof err === "string") {
+        message = err;
+      }
       setError(message);
     } finally {
       setLoading(false);
@@ -158,7 +160,7 @@ export default function RideHistoryPage() {
                         {ride.pickup_address && (
                           <span className="inline-flex items-center gap-1">
                             <MapPin size={10} />
-                            <span className="truncate max-w-[200px]">
+                            <span className="truncate max-w-50">
                               {ride.pickup_address}
                             </span>
                           </span>
@@ -174,7 +176,7 @@ export default function RideHistoryPage() {
 
                   <div className="md:w-1/5 flex items-center gap-1 text-xs text-gray-500">
                     <Clock size={12} className="hidden md:inline" />
-                    <span className="truncate max-w-[180px]">
+                    <span className="truncate max-w-45">
                       {formatDateTime(ride.requested_at)}
                     </span>
                   </div>

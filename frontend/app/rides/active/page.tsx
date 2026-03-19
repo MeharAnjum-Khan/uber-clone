@@ -9,7 +9,6 @@ import {
   ArrowLeft,
   Car,
   Clock,
-  MapPin,
   Navigation,
   Loader2,
   AlertTriangle,
@@ -47,13 +46,15 @@ export default function ActiveRidePage() {
 
       const res = await ridesApi.getRideDetails(token, rideId);
       setRide(res || null);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.warn("Active ride error", err);
-      const message =
-        err?.error ||
-        err?.message ||
-        (typeof err === "string" ? err : null) ||
-        "Failed to load ride.";
+      let message = "Failed to load ride.";
+      if (typeof err === "object" && err !== null) {
+        const maybeError = err as { error?: string; message?: string };
+        message = maybeError.error || maybeError.message || message;
+      } else if (typeof err === "string") {
+        message = err;
+      }
       setError(message);
     } finally {
       setLoading(false);
@@ -81,13 +82,15 @@ export default function ActiveRidePage() {
 
       await ridesApi.updateStatus(token, rideId, "cancelled");
       await loadRide();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.warn("Cancel ride error", err);
-      const message =
-        err?.error ||
-        err?.message ||
-        (typeof err === "string" ? err : null) ||
-        "Failed to cancel ride.";
+      let message = "Failed to cancel ride.";
+      if (typeof err === "object" && err !== null) {
+        const maybeError = err as { error?: string; message?: string };
+        message = maybeError.error || maybeError.message || message;
+      } else if (typeof err === "string") {
+        message = err;
+      }
       setError(message);
     } finally {
       setActionLoading(false);
@@ -152,7 +155,7 @@ export default function ActiveRidePage() {
             </div>
             <h2 className="text-lg font-bold text-black">No active ride</h2>
             <p className="text-sm text-gray-500 max-w-sm">
-              You don't have an active ride right now. Request a new ride to
+              You don&apos;t have an active ride right now. Request a new ride to
               see it here.
             </p>
             <Link
