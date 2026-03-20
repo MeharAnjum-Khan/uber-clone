@@ -1,19 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const paymentsController = require('../controllers/payments.controller');
-
-// Middleware Placeholder - Ensure these are implemented in your auth module
-const authMiddleware = (req, res, next) => {
-  // Logic to verify Clerk token and populate req.user
-  // e.g., req.user = { id: 'user_123', role: 'rider' };
-  if (!req.headers.authorization) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-  next();
-};
+const { verifyToken, authMiddleware } = require('../middleware/auth.middleware');
 
 // POST /payments/create-intent
-router.post('/create-intent', authMiddleware, paymentsController.createIntent);
+router.post('/create-intent', verifyToken, authMiddleware, paymentsController.createIntent);
 
 // POST /payments/webhook
 // Critical: Stripe requires the raw body to verify the signature.
@@ -25,6 +16,6 @@ router.post(
 );
 
 // GET /payments/history
-router.get('/history', authMiddleware, paymentsController.getHistory);
+router.get('/history', verifyToken, authMiddleware, paymentsController.getHistory);
 
 module.exports = router;

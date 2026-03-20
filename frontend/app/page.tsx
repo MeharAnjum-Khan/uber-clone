@@ -18,9 +18,9 @@ export default function LandingPage() {
             GoRide
           </Link>
           <div className="hidden lg:flex items-center gap-6 text-sm font-medium">
-            <Link href="/ride" className="hover:text-gray-300 transition-colors">Ride</Link>
-            <Link href="/drive" className="hover:text-gray-300 transition-colors">Drive</Link>
-            <Link href="/about" className="hover:text-gray-300 transition-colors">About</Link>
+            <Link href="/rides/request" className="hover:text-gray-300 transition-colors">Ride</Link>
+            <Link href="/driver/dashboard" className="hover:text-gray-300 transition-colors">Drive</Link>
+            <Link href="#about" className="hover:text-gray-300 transition-colors">About</Link>
           </div>
         </div>
 
@@ -54,9 +54,9 @@ export default function LandingPage() {
       {/* Mobile Menu */}
       {isMenuOpen && (
         <div className="fixed inset-0 z-[49] bg-black pt-24 px-6 lg:hidden flex flex-col gap-6 text-white animate-in slide-in-from-top duration-300">
-          <Link href="/ride" className="text-3xl font-bold" onClick={() => setIsMenuOpen(false)}>Ride</Link>
-          <Link href="/drive" className="text-3xl font-bold" onClick={() => setIsMenuOpen(false)}>Drive</Link>
-          <Link href="/about" className="text-3xl font-bold" onClick={() => setIsMenuOpen(false)}>About</Link>
+          <Link href="/rides/request" className="text-3xl font-bold" onClick={() => setIsMenuOpen(false)}>Ride</Link>
+          <Link href="/driver/dashboard" className="text-3xl font-bold" onClick={() => setIsMenuOpen(false)}>Drive</Link>
+          <Link href="#about" className="text-3xl font-bold" onClick={() => setIsMenuOpen(false)}>About</Link>
           {!userId && (
             <Link href="/login" className="text-3xl font-bold" onClick={() => setIsMenuOpen(false)}>Log in</Link>
           )}
@@ -78,7 +78,7 @@ export default function LandingPage() {
               up-front pricing, and world-class safety features.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start pt-2">
-              <Link href="/ride" className="bg-black text-white px-8 py-3 rounded-lg font-bold text-base flex items-center justify-center gap-2 hover:bg-gray-800 transition-all group shadow-lg shadow-black/10">
+              <Link href="/rides/request" className="bg-black text-white px-8 py-3 rounded-lg font-bold text-base flex items-center justify-center gap-2 hover:bg-gray-800 transition-all group shadow-lg shadow-black/10">
                 Request a ride
                 <ArrowRight className="group-hover:translate-x-1 transition-transform w-5 h-5" />
               </Link>
@@ -141,7 +141,7 @@ export default function LandingPage() {
       </section>
 
       {/* Features Grid */}
-      <section className="py-24 px-6 md:px-16 bg-white">
+      <section id="about" className="py-24 px-6 md:px-16 bg-white">
         <div className="max-w-7xl mx-auto">
           <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-16">Focused on what matters</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-24">
@@ -173,7 +173,7 @@ export default function LandingPage() {
                     Drive on the platform with the largest network of active riders. 
                     Earn money on your own schedule.
                 </p>
-                <Link href="/drive" className="inline-block bg-black text-white px-8 py-3 rounded-lg font-bold hover:bg-gray-800 transition-colors">
+                <Link href="/driver/dashboard" className="inline-block bg-black text-white px-8 py-3 rounded-lg font-bold hover:bg-gray-800 transition-colors">
                     Get started
                 </Link>
             </div>
