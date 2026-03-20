@@ -100,7 +100,7 @@ export default function DriverEarningsPage() {
   };
 
   const formatMoney = (amount: number) => {
-    return `$${amount.toFixed(2)}`;
+    return `??{amount.toFixed(2)}`;
   };
 
   return (
@@ -270,7 +270,7 @@ export default function DriverEarningsPage() {
 
                       <div className="md:w-1/5 flex justify-center">
                         <span
-                          className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
+                          className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ?{
                             ride.status === "completed"
                               ? "bg-emerald-50 text-emerald-700"
                               : ride.status === "cancelled"

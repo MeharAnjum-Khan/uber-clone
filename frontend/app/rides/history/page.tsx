@@ -183,7 +183,7 @@ export default function RideHistoryPage() {
 
                   <div className="md:w-1/5 flex justify-center">
                     <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
+                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ?{
                         ride.status === "completed"
                           ? "bg-emerald-50 text-emerald-700"
                           : ride.status === "cancelled"
@@ -197,7 +197,7 @@ export default function RideHistoryPage() {
 
                   <div className="md:w-1/5 text-right text-sm font-semibold text-black">
                     {ride.estimated_fare != null
-                      ? `$${ride.estimated_fare.toFixed(2)}`
+                      ? `??{ride.estimated_fare.toFixed(2)}`
                       : "—"}
                   </div>
                 </li>

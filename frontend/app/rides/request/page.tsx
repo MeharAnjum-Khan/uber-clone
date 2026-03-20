@@ -254,7 +254,7 @@ export default function RequestRidePage() {
                       {option.eta} min away • {option.distance} km
                     </p>
                   </div>
-                  <p className="text-sm font-bold">{"$" + (option.price?.toFixed(2) || "0.00")}</p>
+                  <p className="text-sm font-bold">{"?" + (option.price?.toFixed(2) || "0.00")}</p>
                 </button>
               ))}
 

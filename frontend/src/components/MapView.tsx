@@ -15,6 +15,9 @@ const DefaultIcon = L.icon({
 
 L.Marker.prototype.options.icon = DefaultIcon;
 
+// NAGPUR COORDINATES
+const NAGPUR_CENTER: [number, number] = [21.1458, 79.0882];
+
 interface MapViewProps {
   pickup: [number, number] | null;
   drop: [number, number] | null;
@@ -45,18 +48,22 @@ function ChangeView({ center }: { center: [number, number] }) {
 }
 
 export default function MapView({ pickup, drop, onPickupChange, onDropChange, selectingMode }: MapViewProps) {
-  const [center, setCenter] = useState<[number, number]>([37.7749, -122.4194]);
+  const [center, setCenter] = useState<[number, number]>(NAGPUR_CENTER);
 
   useEffect(() => {
     if (pickup) {
       setCenter(pickup);
     } else if (typeof window !== "undefined" && "geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition((pos) => {
-        setCenter([pos.coords.latitude, pos.coords.longitude]);
-      });
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setCenter([pos.coords.latitude, pos.coords.longitude]);
+        },
+        () => {
+          // Fallback to Nagpur if geolocation fails
+          setCenter(NAGPUR_CENTER);
+        }
+      );
     }
-    // Only update center on mount or when pickup explicitly changes from null to something
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pickup === null]);
 
   const handleMapClick = (lat: number, lng: number) => {

@@ -253,7 +253,7 @@ export default function DriverDashboardPage() {
               type="button"
               onClick={handleToggleStatus}
               disabled={toggling}
-              className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold border ${
+              className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold border ?{
                 online
                   ? "bg-emerald-500 border-emerald-500 text-white hover:bg-emerald-600"
                   : "bg-white border-gray-200 text-gray-800 hover:bg-gray-50"
@@ -342,7 +342,7 @@ export default function DriverDashboardPage() {
                 </div>
                 <h3 className="text-lg font-bold text-black">Today&apos;s earnings</h3>
                 <p className="text-3xl font-bold mt-2 text-black">
-                  ${todayEarnings.toFixed(2)}
+                  ?{todayEarnings.toFixed(2)}
                 </p>
                 <p className="text-gray-500 text-sm mt-1">Before fees and taxes</p>
               </div>
@@ -395,7 +395,7 @@ export default function DriverDashboardPage() {
                             <span className="truncate max-w-55">
                               {r.pickup_address || "Pickup"}
                               {r.drop_address ? ` 
-                                → ${r.drop_address}
+                                → ?{r.drop_address}
                               ` : ""}
                             </span>
                           </p>
@@ -403,7 +403,7 @@ export default function DriverDashboardPage() {
                         <div className="text-right">
                           <p className="font-bold text-black">
                             {r.estimated_fare != null
-                              ? `$${r.estimated_fare.toFixed(2)}`
+                              ? `??{r.estimated_fare.toFixed(2)}`
                               : "—"}
                           </p>
                           {r.distance != null && (

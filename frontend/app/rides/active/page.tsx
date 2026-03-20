@@ -191,7 +191,7 @@ function ActiveRideContent() {
                 </span>
                 <div className="mt-2 text-sm font-semibold text-black text-right">
                   {ride.estimated_fare != null
-                    ? "$" + ride.estimated_fare.toFixed(2)
+                    ? "?" + ride.estimated_fare.toFixed(2)
                     : "--"}
                 </div>
               </div>

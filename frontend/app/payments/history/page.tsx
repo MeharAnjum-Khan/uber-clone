@@ -77,7 +77,7 @@ export default function PaymentsHistoryPage() {
 
   const formatAmount = (amount?: number | null, currency?: string | null) => {
     if (amount == null) return "—";
-    const symbol = currency?.toLowerCase() === "usd" ? "$" : "";
+    const symbol = currency?.toLowerCase() === "inr" ? "?" : "";
     return `${symbol}${amount.toFixed(2)}`;
   };
 
