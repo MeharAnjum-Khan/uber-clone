@@ -1,18 +1,11 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import Link from "next/link";
+import React, { useEffect, useState, Suspense } from "react";
+import Link from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import { ridesApi } from "@/src/api/ridesApi";
-import {
-  ArrowLeft,
-  Car,
-  Clock,
-  Navigation,
-  Loader2,
-  AlertTriangle,
-} from "lucide-react";
+import { ArrowLeft, Car, Clock, Navigation, Loader2, AlertTriangle } from "lucide-react";
 
 type ActiveRide = {
   id: string;
@@ -24,7 +17,8 @@ type ActiveRide = {
   estimated_fare?: number | null;
 };
 
-export default function ActiveRidePage() {
+// Internal component that uses useSearchParams
+function ActiveRideContent() {
   const searchParams = useSearchParams();
   const rideId = searchParams.get("rideId");
   const { getToken } = useAuth();
@@ -118,13 +112,13 @@ export default function ActiveRidePage() {
       <div className="w-full max-w-3xl">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <Link
+            <a
               href="/dashboard"
               className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
             >
               <ArrowLeft size={14} />
               Dashboard
-            </Link>
+            </a>
             <div>
               <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-black">
                 Active ride
@@ -158,12 +152,12 @@ export default function ActiveRidePage() {
               You don&apos;t have an active ride right now. Request a new ride to
               see it here.
             </p>
-            <Link
+            <a
               href="/rides/request"
               className="mt-2 inline-flex items-center gap-2 rounded-full bg-black px-5 py-2 text-sm font-bold text-white hover:bg-gray-900"
             >
               Request a ride
-            </Link>
+            </a>
           </div>
         ) : (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-6">
@@ -185,20 +179,20 @@ export default function ActiveRidePage() {
               </div>
               <div className="text-right">
                 <span
-                  className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
+                  className={"inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold " + (
                     ride.status === "completed"
                       ? "bg-emerald-50 text-emerald-700"
                       : ride.status === "cancelled"
                       ? "bg-red-50 text-red-700"
                       : "bg-gray-100 text-gray-700"
-                  }`}
+                  )}
                 >
                   {formatStatus(ride.status)}
                 </span>
                 <div className="mt-2 text-sm font-semibold text-black text-right">
                   {ride.estimated_fare != null
-                    ? `$${ride.estimated_fare.toFixed(2)}`
-                    : "—"}
+                    ? "$" + ride.estimated_fare.toFixed(2)
+                    : "--"}
                 </div>
               </div>
             </div>
@@ -244,12 +238,12 @@ export default function ActiveRidePage() {
             </div>
 
             <div className="flex justify-between items-center gap-4">
-              <Link
+              <a
                 href="/rides/history"
                 className="text-xs font-semibold text-gray-600 hover:text-black"
               >
                 View ride history
-              </Link>
+              </a>
 
               <div className="flex items-center gap-3">
                 <button
@@ -283,5 +277,14 @@ export default function ActiveRidePage() {
         )}
       </div>
     </div>
+  );
+}
+
+// Main page component with Suspense
+export default function ActiveRidePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center"><Loader2 className="animate-spin text-black" /></div>}>
+      <ActiveRideContent />
+    </Suspense>
   );
 }
