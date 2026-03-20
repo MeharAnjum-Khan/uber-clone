@@ -1,10 +1,10 @@
-"use client";
+﻿'use client';
 
-import React, { useEffect, useState } from "react";
-import { useAuth } from "@clerk/nextjs";
-import { ridesApi } from "@/src/api/ridesApi";
-import { ArrowLeft, Car, Clock, MapPin, RefreshCcw } from "lucide-react";
-import Link from "next/link";
+import React, { useEffect, useState } from 'react';
+import { useAuth } from '@clerk/nextjs';
+import { ridesApi } from '@/src/api/ridesApi';
+import { ArrowLeft, Car, Clock, MapPin, RefreshCcw, Navigation2, CheckCircle2, XCircle } from 'lucide-react';
+import Link from 'next/link';
 
 type RideHistoryItem = {
   id: string;
@@ -27,182 +27,106 @@ export default function RideHistoryPage() {
     try {
       setLoading(true);
       setError(null);
-
       const token = await getToken();
-      if (!token) {
-        throw new Error("Not authenticated");
-      }
-
+      if (!token) throw new Error('Not authenticated');
       const res = await ridesApi.getHistory(token);
-      if (Array.isArray(res)) {
-        setRides(res);
-      } else {
-        setRides([]);
-      }
-    } catch (err: unknown) {
-      console.warn("Ride history error", err);
-      let message = "Failed to load ride history.";
-      if (typeof err === "object" && err !== null) {
-        const maybeError = err as { error?: string; message?: string };
-        message = maybeError.error || maybeError.message || message;
-      } else if (typeof err === "string") {
-        message = err;
-      }
-      setError(message);
+      if (Array.isArray(res)) setRides(res);
+      else setRides([]);
+    } catch (err: any) {
+      console.warn('Ride history error', err);
+      setError('Failed to load ride history.');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    loadHistory();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  useEffect(() => { loadHistory(); }, []);
 
   const formatDateTime = (value?: string | null) => {
-    if (!value) return "";
+    if (!value) return '';
     try {
-      return new Date(value).toLocaleString();
-    } catch {
-      return value;
+      const date = new Date(value);
+      return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+    } catch { return value; }
+  };
+
+  const getStatusColor = (status?: string) => {
+    switch(status?.toLowerCase()) {
+      case 'completed': return 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20';
+      case 'cancelled': return 'bg-red-50 text-red-700 ring-1 ring-red-600/20';
+      case 'active': return 'bg-blue-50 text-blue-700 ring-1 ring-blue-600/20';
+      default: return 'bg-gray-50 text-gray-600 ring-1 ring-gray-600/20';
     }
   };
 
-  const formatStatus = (status?: string) => {
-    if (!status) return "";
-    return status.charAt(0).toUpperCase() + status.slice(1);
+  const cleanAddress = (addr?: string | null) => {
+    if (!addr) return 'Nagpur Location';
+    return addr.split(',').slice(0, 2).join(',').trim();
   };
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB] flex flex-col items-center px-4 py-8 md:py-10">
-      <div className="w-full max-w-5xl">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
-            >
-              <ArrowLeft size={14} />
-              Dashboard
-            </Link>
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-black">
-                Ride history
-              </h1>
-              <p className="text-gray-500 text-sm md:text-base">
-                View all your past trips and receipts.
-              </p>
+    <div className='min-h-screen bg-[#F9FAFB] flex flex-col items-center px-4 py-8 md:py-12 text-black'>
+      <div className='w-full max-w-5xl'>
+        <div className='flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10'>
+          <div>
+            <div className='flex items-center gap-3 mb-2'>
+              <Link href='/dashboard' className='p-2 rounded-full bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow'>
+                <ArrowLeft size={18} />
+              </Link>
+              <h1 className='text-3xl font-black tracking-tight'>Your Trips</h1>
             </div>
+            <p className='text-gray-500 font-medium ml-11'>Recent rides in Nagpur</p>
           </div>
-
-          <button
-            type="button"
-            onClick={loadHistory}
-            disabled={loading}
-            className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
-          >
-            <RefreshCcw size={14} />
-            Refresh
+          <button onClick={loadHistory} className='flex items-center gap-2 rounded-2xl bg-black px-6 py-3 text-sm font-black text-white hover:bg-gray-900 transition-all'>
+            <RefreshCcw size={16} className={loading ? 'animate-spin' : ''} /> Refresh
           </button>
         </div>
 
-        {error && (
-          <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
-          </div>
-        )}
-
         {loading ? (
-          <div className="mt-16 flex flex-col items-center gap-4 text-gray-500">
-            <div className="w-10 h-10 border-4 border-black border-t-transparent rounded-full animate-spin" />
-            <p>Loading your rides...</p>
+          <div className='mt-20 flex flex-col items-center gap-4 py-12'>
+            <div className='w-12 h-12 border-4 border-black border-t-transparent rounded-full animate-spin' />
+            <p className='font-bold text-gray-400 uppercase tracking-widest text-xs'>Loading rides...</p>
           </div>
         ) : rides.length === 0 ? (
-          <div className="mt-16 flex flex-col items-center gap-4 text-center">
-            <div className="mx-auto w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-1">
-              <Car size={24} className="text-gray-300" />
-            </div>
-            <h2 className="text-lg font-bold text-black">No rides yet</h2>
-            <p className="text-sm text-gray-500 max-w-sm">
-              When you start requesting rides, they will show up here
-              along with their status and receipts.
-            </p>
-            <Link
-              href="/rides/request"
-              className="mt-2 inline-flex items-center gap-2 rounded-full bg-black px-5 py-2 text-sm font-bold text-white hover:bg-gray-900"
-            >
-              Request a ride
+          <div className='mt-20 flex flex-col items-center text-center py-16 bg-white rounded-3xl border border-gray-100 shadow-sm'>
+            <Car size={32} className='text-gray-200 mb-6' />
+            <h2 className='text-2xl font-black mb-2'>No trips found</h2>
+            <Link href='/rides/request' className='inline-flex rounded-2xl bg-black px-8 py-4 text-base font-black text-white hover:bg-gray-900 shadow-xl mt-8'>
+              Request first ride
             </Link>
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="px-6 py-3 border-b border-gray-50 flex items-center justify-between text-xs font-semibold text-gray-500 uppercase tracking-widest">
-              <span className="w-2/5">Trip</span>
-              <span className="hidden md:inline-flex w-1/5">Date</span>
-              <span className="w-1/5 text-center">Status</span>
-              <span className="w-1/5 text-right">Amount</span>
-            </div>
-            <ul className="divide-y divide-gray-50">
-              {rides.map((ride) => (
-                <li
-                  key={ride.id}
-                  className="px-6 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 hover:bg-gray-50"
-                >
-                  <div className="flex-1 flex items-start gap-3 min-w-0">
-                    <div className="mt-1 w-8 h-8 rounded-full bg-gray-900 flex items-center justify-center text-white text-xs font-bold shrink-0">
-                      <Car size={16} />
+          <div className='grid gap-4'>
+            {rides.map((ride) => (
+              <div key={ride.id} className='group bg-white rounded-3xl border border-gray-100 p-6 shadow-sm hover:shadow-xl transition-all flex flex-col md:flex-row md:items-center gap-6'>
+                <div className='w-14 h-14 rounded-2xl bg-gray-50 flex items-center justify-center shrink-0 group-hover:bg-black group-hover:text-white transition-colors'>
+                  <Car size={28} />
+                </div>
+                <div className='flex-1 min-w-0'>
+                  <div className='flex items-center gap-2 mb-3'>
+                    <span className={'px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ' + getStatusColor(ride.status)}>
+                      {ride.status || 'Unknown'}
+                    </span>
+                    <span className='text-gray-300'>•</span>
+                    <span className='text-xs font-black text-gray-400 uppercase tracking-tighter'>{formatDateTime(ride.requested_at)}</span>
+                  </div>
+                  <div className='space-y-2'>
+                    <div className='flex items-center gap-2 text-sm font-bold text-black truncate'>
+                      <div className='w-1.5 h-1.5 rounded-full bg-green-500 shrink-0' />
+                      {cleanAddress(ride.pickup_address)}
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-black truncate">
-                        {ride.drop_address || ride.pickup_address || "Trip"}
-                      </p>
-                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
-                        {ride.pickup_address && (
-                          <span className="inline-flex items-center gap-1">
-                            <MapPin size={10} />
-                            <span className="truncate max-w-50">
-                              {ride.pickup_address}
-                            </span>
-                          </span>
-                        )}
-                        {ride.ride_type && (
-                          <span className="px-2 py-0.5 rounded-full bg-gray-100 text-[10px] font-semibold uppercase tracking-widest">
-                            {ride.ride_type}
-                          </span>
-                        )}
-                      </div>
+                    <div className='flex items-center gap-2 text-sm font-bold text-black truncate'>
+                      <div className='w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0' />
+                      {cleanAddress(ride.drop_address)}
                     </div>
                   </div>
-
-                  <div className="md:w-1/5 flex items-center gap-1 text-xs text-gray-500">
-                    <Clock size={12} className="hidden md:inline" />
-                    <span className="truncate max-w-45">
-                      {formatDateTime(ride.requested_at)}
-                    </span>
-                  </div>
-
-                  <div className="md:w-1/5 flex justify-center">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ?{
-                        ride.status === "completed"
-                          ? "bg-emerald-50 text-emerald-700"
-                          : ride.status === "cancelled"
-                          ? "bg-red-50 text-red-700"
-                          : "bg-gray-100 text-gray-700"
-                      }`}
-                    >
-                      {formatStatus(ride.status)}
-                    </span>
-                  </div>
-
-                  <div className="md:w-1/5 text-right text-sm font-semibold text-black">
-                    {ride.estimated_fare != null
-                      ? `??{ride.estimated_fare.toFixed(2)}`
-                      : "—"}
-                  </div>
-                </li>
-              ))}
-            </ul>
+                </div>
+                <div className='flex flex-col items-end gap-1'>
+                  <p className='text-2xl font-black'>₹{(ride.estimated_fare ?? 0).toFixed(0)}</p>
+                  <p className='text-[10px] font-black uppercase text-gray-400 tracking-widest'>{ride.ride_type || 'GoRide'}</p>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

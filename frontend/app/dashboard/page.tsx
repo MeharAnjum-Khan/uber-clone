@@ -178,7 +178,7 @@ export default function DashboardPage() {
                       <p className="text-xs text-gray-500">{r.ride_type || 'GoRide Economy'} • {r.requested_at ? new Date(r.requested_at).toLocaleString() : 'Just now'}</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-black">?{(r.estimated_fare || 0).toFixed(2)}</p>
+                      <p className="font-bold text-black">₹{(r.estimated_fare || 0).toFixed(2)}</p>
                       <p className="text-xs text-gray-500 capitalize">{r.status}</p>
                     </div>
                   </li>
