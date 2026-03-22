@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth, useUser, UserButton } from "@clerk/nextjs";
 import { ridesApi } from "@/src/api/ridesApi";
-import { LayoutDashboard, MapPin, Car, DollarSign, Clock } from "lucide-react";
+import { LayoutDashboard, MapPin, Car, IndianRupee, Clock } from "lucide-react";
 
 type DriverEarningsRide = {
   id: string;
@@ -100,7 +100,7 @@ export default function DriverEarningsPage() {
   };
 
   const formatMoney = (amount: number) => {
-    return `??{amount.toFixed(2)}`;
+    return `₹${amount.toFixed(2)}`;
   };
 
   return (
@@ -129,7 +129,7 @@ export default function DriverEarningsPage() {
             href="/driver/earnings"
             className="flex items-center gap-3 bg-white/10 text-white px-4 py-3 rounded-lg font-medium"
           >
-            <DollarSign size={18} />
+            <IndianRupee size={18} />
             Earnings
           </Link>
         </nav>
@@ -189,7 +189,7 @@ export default function DriverEarningsPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <div className="bg-black text-white p-6 rounded-2xl shadow-lg">
                 <div className="w-12 h-12 rounded-xl bg-white/10 mb-4 flex items-center justify-center">
-                  <DollarSign size={20} />
+                  <IndianRupee size={20} />
                 </div>
                 <h3 className="text-lg font-bold">Today&apos;s earnings</h3>
                 <p className="text-3xl font-bold mt-2">
@@ -200,7 +200,7 @@ export default function DriverEarningsPage() {
 
               <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
                 <div className="w-12 h-12 rounded-xl bg-gray-100 mb-4 flex items-center justify-center">
-                  <DollarSign size={20} />
+                  <IndianRupee size={20} />
                 </div>
                 <h3 className="text-lg font-bold text-black">This week</h3>
                 <p className="text-3xl font-bold mt-2 text-black">

@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth, useUser, UserButton } from "@clerk/nextjs";
 import { driversApi } from "@/src/api/driversApi";
-import { LayoutDashboard, MapPin, DollarSign, Power, Clock } from "lucide-react";
+import { LayoutDashboard, MapPin, IndianRupee, Power, Clock } from "lucide-react";
 
 type DriverProfile = {
   status?: string | null;
@@ -128,7 +128,7 @@ export default function DriverAvailabilityPage() {
             href="/driver/earnings"
             className="flex items-center gap-3 text-gray-400 hover:text-white px-4 py-3 rounded-lg font-medium"
           >
-            <DollarSign size={18} />
+            <IndianRupee size={18} />
             Earnings
           </Link>
         </nav>

@@ -169,12 +169,12 @@ export default function RequestRidePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB] flex flex-col items-center px-4 py-8 md:py-12 text-black font-sans">
+    <div className="min-h-screen bg-[#F9FAFB] flex flex-col items-center px-4 py-8 md:py-12 text-black">
       <div className="w-full max-w-6xl flex flex-col md:flex-row gap-6">
         
         <div className="w-full md:w-[420px] bg-white rounded-3xl shadow-xl border border-gray-100 p-6 md:p-8 flex flex-col">
           <div className="mb-8">
-            <h1 className="text-3xl font-black mb-1">Where to?</h1>
+            <h1 className="text-3xl font-bold mb-1">Where to?</h1>
             <p className="text-gray-500 text-sm font-medium">Set your pickup and destination in Nagpur.</p>
           </div>
 
@@ -246,14 +246,14 @@ export default function RequestRidePage() {
               type="button"
               onClick={handleEstimate}
               disabled={loadingEstimate || !pickupCoords || !dropCoords || geocoding}
-              className="w-full rounded-2xl bg-black py-4.5 text-lg font-black text-white hover:bg-gray-900 disabled:opacity-40 transition-all shadow-lg active:scale-[0.98]"
+              className="w-full rounded-2xl bg-black py-4.5 text-lg font-bold text-white hover:bg-gray-900 disabled:opacity-40 transition-all shadow-lg active:scale-[0.98]"
             >
               {loadingEstimate ? 'Calculating...' : 'Find Rides'}
             </button>
           ) : (
             <div className="flex-1 flex flex-col min-h-0">
               <div className="flex items-center justify-between mb-4 px-1">
-                <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest">Available Rides</h2>
+                <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Available Rides</h2>
                 <button onClick={() => setEstimated(null)} className="text-xs font-bold text-blue-600 hover:underline">Reset Map</button>
               </div>
               
@@ -270,13 +270,13 @@ export default function RequestRidePage() {
                         <MapIcon size={24} className={selectedType === option.type ? 'text-white' : 'text-black'} />
                       </div>
                       <div>
-                        <p className="font-black text-base leading-tight">{option.type || 'GoRide'}</p>
+                        <p className="font-bold text-base leading-tight">{option.type || 'GoRide'}</p>
                         <p className={`text-xs font-bold ${selectedType === option.type ? 'text-white/60' : 'text-gray-500'}`}>
                           {option.eta} min away
                         </p>
                       </div>
                     </div>
-                    <p className="text-lg font-black">₹{(option.price ?? 0).toFixed(0)}</p>
+                    <p className="text-lg font-bold">₹{(option.price ?? 0).toFixed(0)}</p>
                   </button>
                 ))}
               </div>
@@ -285,7 +285,7 @@ export default function RequestRidePage() {
                 type="button"
                 onClick={handleRequestRide}
                 disabled={!selectedType || requesting}
-                className="mt-auto w-full rounded-2xl bg-black py-4.5 text-lg font-black text-white hover:bg-gray-900 disabled:opacity-50 transition-all shadow-xl active:scale-[0.98]"
+                className="mt-auto w-full rounded-2xl bg-black py-4.5 text-lg font-bold text-white hover:bg-gray-900 disabled:opacity-50 transition-all shadow-xl active:scale-[0.98]"
               >
                 {requesting ? 'Confirming...' : `Confirm ${selectedType || 'Ride'}`}
               </button>
@@ -306,12 +306,12 @@ export default function RequestRidePage() {
             {!selectingMode ? (
               <div className="bg-white px-4 py-2.5 rounded-2xl shadow-2xl border border-gray-100 pointer-events-auto flex items-center gap-3">
                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-xs font-black text-gray-800 uppercase tracking-tighter">Live Nagpur Map</span>
+                <span className="text-xs font-bold text-gray-800 uppercase tracking-tighter">Live Nagpur Map</span>
               </div>
             ) : (
               <div className="bg-black text-white px-6 py-3 rounded-full shadow-2xl pointer-events-auto flex items-center gap-3 animate-bounce mx-auto">
                 <MapPin size={18} className="text-red-500" />
-                <span className="text-sm font-black uppercase tracking-widest">Tap on map to set {selectingMode}</span>
+                <span className="text-sm font-bold uppercase tracking-widest">Tap on map to set {selectingMode}</span>
               </div>
             )}
           </div>

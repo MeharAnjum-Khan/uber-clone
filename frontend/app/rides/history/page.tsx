@@ -73,11 +73,11 @@ export default function RideHistoryPage() {
               <Link href='/dashboard' className='p-2 rounded-full bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow'>
                 <ArrowLeft size={18} />
               </Link>
-              <h1 className='text-3xl font-black tracking-tight'>Your Trips</h1>
+              <h1 className='text-3xl font-bold tracking-tight'>Your Trips</h1>
             </div>
             <p className='text-gray-500 font-medium ml-11'>Recent rides in Nagpur</p>
           </div>
-          <button onClick={loadHistory} className='flex items-center gap-2 rounded-2xl bg-black px-6 py-3 text-sm font-black text-white hover:bg-gray-900 transition-all'>
+          <button onClick={loadHistory} className='flex items-center gap-2 rounded-2xl bg-black px-6 py-3 text-sm font-bold text-white hover:bg-gray-900 transition-all'>
             <RefreshCcw size={16} className={loading ? 'animate-spin' : ''} /> Refresh
           </button>
         </div>
@@ -90,8 +90,8 @@ export default function RideHistoryPage() {
         ) : rides.length === 0 ? (
           <div className='mt-20 flex flex-col items-center text-center py-16 bg-white rounded-3xl border border-gray-100 shadow-sm'>
             <Car size={32} className='text-gray-200 mb-6' />
-            <h2 className='text-2xl font-black mb-2'>No trips found</h2>
-            <Link href='/rides/request' className='inline-flex rounded-2xl bg-black px-8 py-4 text-base font-black text-white hover:bg-gray-900 shadow-xl mt-8'>
+            <h2 className='text-2xl font-bold mb-2'>No trips found</h2>
+            <Link href='/rides/request' className='inline-flex rounded-2xl bg-black px-8 py-4 text-base font-bold text-white hover:bg-gray-900 shadow-xl mt-8'>
               Request first ride
             </Link>
           </div>
@@ -104,11 +104,11 @@ export default function RideHistoryPage() {
                 </div>
                 <div className='flex-1 min-w-0'>
                   <div className='flex items-center gap-2 mb-3'>
-                    <span className={'px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ' + getStatusColor(ride.status)}>
+                    <span className={'px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ' + getStatusColor(ride.status)}>
                       {ride.status || 'Unknown'}
                     </span>
                     <span className='text-gray-300'>•</span>
-                    <span className='text-xs font-black text-gray-400 uppercase tracking-tighter'>{formatDateTime(ride.requested_at)}</span>
+                    <span className='text-xs font-bold text-gray-400 uppercase tracking-tighter'>{formatDateTime(ride.requested_at)}</span>
                   </div>
                   <div className='space-y-2'>
                     <div className='flex items-center gap-2 text-sm font-bold text-black truncate'>
@@ -122,8 +122,8 @@ export default function RideHistoryPage() {
                   </div>
                 </div>
                 <div className='flex flex-col items-end gap-1'>
-                  <p className='text-2xl font-black'>₹{(ride.estimated_fare ?? 0).toFixed(0)}</p>
-                  <p className='text-[10px] font-black uppercase text-gray-400 tracking-widest'>{ride.ride_type || 'GoRide'}</p>
+                  <p className='text-2xl font-bold'>₹{(ride.estimated_fare ?? 0).toFixed(0)}</p>
+                  <p className='text-[10px] font-bold uppercase text-gray-400 tracking-widest'>{ride.ride_type || 'GoRide'}</p>
                 </div>
               </div>
             ))}
