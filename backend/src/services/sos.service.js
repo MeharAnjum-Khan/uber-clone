@@ -27,7 +27,7 @@ const triggerSOS = async (userId, rideId, lat, lng) => {
   }
 
   // 3. Validate Ride Status (Must be active)
-  if (!['started', 'arriving'].includes(ride.status)) {
+  if (!['started', 'arriving', 'in_progress', 'accepted'].includes(ride.status)) {
     throw new Error('SOS can only be triggered during an active ride');
   }
 

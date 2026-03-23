@@ -43,15 +43,13 @@ export const handleApiCall = async (apiFunc) => {
       axiosError.message ||
       'Something went wrong. Please try again later.';
 
-    const normalizedError = {
-      status: status ?? null,
-      url: url ?? null,
-      error: message,
-      data: responseData ?? null,
-    };
+    const customError = new Error(message);
+    customError.status = status ?? null;
+    customError.url = url ?? null;
+    customError.data = responseData ?? null;
 
-    console.warn('API Error:', normalizedError);
-    throw normalizedError;
+    console.warn('API Error:', customError);
+    throw customError;
   }
 };
 
