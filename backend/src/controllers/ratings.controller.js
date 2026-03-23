@@ -64,8 +64,24 @@ const getUserAverage = async (req, res) => {
   }
 };
 
+const getUserReviews = async (req, res) => {
+  try {
+    if (!req.user || !req.user.id) {
+       return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const userId = req.user.id;
+    // We get reviews FOR this user
+    const reviews = await ratingsService.getUserReviews(userId);
+    res.json(reviews);
+  } catch (error) {
+    console.error('Get User Reviews Error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
 module.exports = {
   submitRating,
   getRideRatings,
   getUserAverage,
+  getUserReviews,
 };

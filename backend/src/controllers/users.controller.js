@@ -83,9 +83,48 @@ const getUserById = async (req, res) => {
   }
 };
 
+const getEmergencyContacts = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const contacts = await usersService.getEmergencyContacts(userId);
+    res.json(contacts);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const addEmergencyContact = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { name, phone, relation } = req.body;
+    if (!name || !phone) return res.status(400).json({ error: 'Name and phone are required' });
+    const contact = await usersService.addEmergencyContact(userId, { name, phone, relation });
+    res.status(201).json(contact);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const deleteEmergencyContact = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { contactId } = req.params;
+    await usersService.deleteEmergencyContact(userId, contactId);
+    res.status(204).send();
+  } catch (error) {
+    if (error.message === 'Contact not found') {
+      return res.status(404).json({ error: 'Contact not found' });
+    }
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   syncUser,
   getMe,
   updateMe,
   getUserById,
+  getEmergencyContacts,
+  addEmergencyContact,
+  deleteEmergencyContact
 };

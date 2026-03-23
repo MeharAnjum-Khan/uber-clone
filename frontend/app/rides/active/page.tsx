@@ -65,13 +65,20 @@ function ActiveRideContent() {
     try {
       const token = await getToken();
       if (!token || !rideId) return;
-      await sosApi.triggerAlert(token, {
+      const response = await sosApi.triggerAlert(token, {
         rideId,
         lat: ride?.pickup_lat || 0,
         lng: ride?.pickup_lng || 0
       });
       setIsSosActive(true);
-      alert('SOS Alert activated! Emergency contacts notified.');
+      
+      let message = 'SOS Alert activated!';
+      if (response && response.notified_contacts_count !== undefined) {
+         message += ` ${response.notified_contacts_count} emergency contacts notified via SMS.`;
+      } else {
+         message += ' Emergency contacts notified.';
+      }
+      alert(message);
     } catch (err) {
       console.error(err);
       alert('Failed to trigger SOS');

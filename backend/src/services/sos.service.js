@@ -40,16 +40,28 @@ const triggerSOS = async (userId, rideId, lat, lng) => {
   const values = [rideId, lat, lng];
   
   const { rows: alerts } = await pool.query(insertQuery, values);
-  return alerts[0];
-};
+  const alert = alerts[0];
 
-/**
- * Service: Get SOS Alerts for a Ride
- */
-const getRideAlerts = async (rideId, requesterId) => {
-  // 1. Fetch Ride to check permissions
-  // (Could be done with a JOIN, but explicit check is clearer)
-  const rideQuery = 'SELECT rider_id, driver_id FROM rides WHERE id = $1';
+  // 5. Fetch Emergency Contacts and Mock SMS
+  const contactsQuery = 'SELECT * FROM emergency_contacts WHERE user_id = $1';
+  const { rows: contacts } = await pool.query(contactsQuery, [userId]);
+  
+  if (contacts.length > 0) {
+    console.log(`\n🚨 --- [MOCK SMS SYSTEM] SOS TRIGGERED FOR RIDE ${rideId} --- 🚨`);
+    contacts.forEach(contact => {
+      console.log(`[SMS To ${contact.phone}] EMERGENCY: The user has pressed the SOS button during their ride.`);
+      console.log(`[SMS To ${contact.phone}] Last Known Location: Lat ${lat}, Lng ${lng}\n`);
+    });
+  } else {
+    console.log(`\n🚨 --- [MOCK SMS SYSTEM] SOS TRIGGERED FOR RIDE ${rideId} --- 🚨`);
+    console.log(`No emergency contacts found for user ${userId}\n`);
+  }
+
+  // Attach notified contacts count to the response
+  return {
+    ...alert,
+    notified_contacts_count: contacts.length
+  };
   const { rows: rides } = await pool.query(rideQuery, [rideId]);
 
   if (rides.length === 0) {

@@ -77,15 +77,16 @@ export default function DriverDashboardPage() {
 
       const driverTrips: DriverDashboardRide[] = Array.isArray(history)
         ? history.filter((ride) => {
-            if (!ride.completed_at) return false;
-            const d = new Date(ride.completed_at).toDateString();
-            return d === today;
+            const targetDate = ride.completed_at || ride.requested_at;
+            if (!targetDate) return false;
+            const d = new Date(targetDate).toDateString();
+            return d === today && ride.status === 'completed';
           })
         : [];
 
       setTodayTrips(driverTrips);
       const total = driverTrips.reduce(
-        (sum, r) => sum + (r.estimated_fare || 0),
+        (sum, r) => sum + Number(r.estimated_fare || 0),
         0
       );
       setTodayEarnings(total);
@@ -403,7 +404,7 @@ export default function DriverDashboardPage() {
                         <div className="text-right">
                           <p className="font-bold text-black">
                             {r.estimated_fare != null
-                              ? `??{r.estimated_fare.toFixed(2)}`
+                              ? `₹${Number(r.estimated_fare).toFixed(2)}`
                               : "—"}
                           </p>
                           {r.distance != null && (

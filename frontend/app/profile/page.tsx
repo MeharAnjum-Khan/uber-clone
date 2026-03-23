@@ -3,14 +3,24 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth, useUser, UserButton } from "@clerk/nextjs";
-import { LayoutDashboard, Plus, History, CreditCard, Settings, Phone } from "lucide-react";
+import { LayoutDashboard, Plus, History, CreditCard, Settings, Phone, Star, ShieldAlert, Trash2 } from "lucide-react";
 import { authApi } from "@/src/api/authApi";
+import { ratingsApi } from "@/src/api/ratingsApi";
+import { usersApi } from "@/src/api/usersApi";
 
 type ProfileData = {
   id: string;
   email?: string | null;
   name?: string | null;
   phone?: string | null;
+};
+
+type EmergencyContact = {
+  id: string;
+  name: string;
+  phone: string;
+  relation?: string;
+  created_at?: string;
 };
 
 export default function ProfilePage() {
@@ -23,6 +33,16 @@ export default function ProfilePage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [phoneInput, setPhoneInput] = useState("");
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [avgRating, setAvgRating] = useState<number | null>(null);
+  const [totalRatings, setTotalRatings] = useState<number>(0);
+
+  // Emergency Contacts state
+  const [emergencyContacts, setEmergencyContacts] = useState<EmergencyContact[]>([]);
+  const [newContactName, setNewContactName] = useState("");
+  const [newContactPhone, setNewContactPhone] = useState("");
+  const [newContactRelation, setNewContactRelation] = useState("");
+  const [addingContact, setAddingContact] = useState(false);
 
   const loadProfile = async () => {
     try {
@@ -38,6 +58,27 @@ export default function ProfilePage() {
         const data = res as ProfileData;
         setProfile(data);
         setPhoneInput(data.phone || "");
+
+        // Fetch ratings/reviews
+        try {
+          const revRes = await ratingsApi.getUserReviews(token);
+          if (Array.isArray(revRes)) {
+            setReviews(revRes);
+          }
+          const avgRes = await ratingsApi.getUserAverage(token, data.id);
+          if (avgRes && (avgRes as any).average_rating !== undefined) {
+             setAvgRating((avgRes as any).average_rating);
+             setTotalRatings((avgRes as any).total_ratings);
+          }
+          
+          const contactsRes = await usersApi.getEmergencyContacts(token);
+          if (Array.isArray(contactsRes)) {
+            setEmergencyContacts(contactsRes);
+          }
+        } catch (rErr) {
+          console.warn("Failed to load secondary data", rErr);
+        }
+
       } else {
         setProfile(null);
         setPhoneInput("");
@@ -90,6 +131,56 @@ export default function ProfilePage() {
       setError(message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleAddEmergencyContact = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!newContactName || !newContactPhone) return;
+    
+    try {
+      setAddingContact(true);
+      setError(null);
+      setSuccess(null);
+
+      const token = await getToken();
+      if (!token) throw new Error("Not authenticated");
+
+      await usersApi.addEmergencyContact(token, {
+        name: newContactName.trim(),
+        phone: newContactPhone.trim(),
+        relation: newContactRelation.trim() || undefined
+      });
+
+      setSuccess("Emergency contact added successfully.");
+      setNewContactName("");
+      setNewContactPhone("");
+      setNewContactRelation("");
+      
+      const contactsRes = await usersApi.getEmergencyContacts(token);
+      if (Array.isArray(contactsRes)) setEmergencyContacts(contactsRes);
+    } catch (err: unknown) {
+      console.warn("Error adding contact", err);
+      setError("Failed to add emergency contact.");
+    } finally {
+      setAddingContact(false);
+    }
+  };
+
+  const handleDeleteEmergencyContact = async (contactId: string) => {
+    if (!confirm("Are you sure you want to remove this emergency contact?")) return;
+    try {
+      setError(null);
+      setSuccess(null);
+      const token = await getToken();
+      if (!token) throw new Error("Not authenticated");
+
+      await usersApi.deleteEmergencyContact(token, contactId);
+      setSuccess("Emergency contact removed.");
+      setEmergencyContacts((prev) => prev.filter((c) => c.id !== contactId));
+    } catch (err: unknown) {
+      console.warn("Error deleting contact", err);
+      setError("Failed to remove emergency contact.");
     }
   };
 
@@ -249,6 +340,134 @@ export default function ProfilePage() {
               {saving ? "Saving..." : "Save changes"}
             </button>
           </form>
+        </section>
+
+        <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6 max-w-2xl">
+          <div className="flex items-center gap-2 mb-6">
+            <ShieldAlert size={20} className="text-red-500" />
+            <h2 className="text-lg font-bold text-black">Emergency Contacts</h2>
+          </div>
+          
+          <div className="mb-6 space-y-3">
+            {emergencyContacts.length === 0 ? (
+              <p className="text-sm text-gray-500 italic">No emergency contacts added yet.</p>
+            ) : (
+              emergencyContacts.map((contact) => (
+                <div key={contact.id} className="flex items-center justify-between p-3 border border-gray-100 rounded-xl bg-gray-50">
+                  <div>
+                    <p className="text-sm font-bold text-black">{contact.name}</p>
+                    <p className="text-xs text-gray-600">{contact.phone} {contact.relation && `• ${contact.relation}`}</p>
+                  </div>
+                  <button 
+                    onClick={() => handleDeleteEmergencyContact(contact.id)}
+                    className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                    title="Remove Contact"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+
+          <form onSubmit={handleAddEmergencyContact} className="space-y-4 border-t border-gray-100 pt-6">
+            <h3 className="text-sm font-bold text-black mb-2">Add New Contact</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-widest mb-1">
+                  Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={newContactName}
+                  onChange={(e) => setNewContactName(e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-black focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+                  placeholder="e.g. Jane Doe"
+                  disabled={addingContact}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-widest mb-1">
+                  Phone Number *
+                </label>
+                <input
+                  type="tel"
+                  required
+                  value={newContactPhone}
+                  onChange={(e) => setNewContactPhone(e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-black focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+                  placeholder="+1 234 567 8900"
+                  disabled={addingContact}
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-widest mb-1">
+                  Relation (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={newContactRelation}
+                  onChange={(e) => setNewContactRelation(e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-black focus:outline-none focus:ring-2 focus:ring-black focus:border-black"
+                  placeholder="e.g. Spouse, Parent"
+                  disabled={addingContact}
+                />
+              </div>
+            </div>
+            <button
+              type="submit"
+              disabled={addingContact || !newContactName || !newContactPhone}
+              className="inline-flex items-center gap-2 rounded-full bg-red-50 text-red-600 border border-red-100 px-5 py-2 text-sm font-bold hover:bg-red-100 disabled:opacity-60"
+            >
+              <Plus size={16} />
+              {addingContact ? "Adding..." : "Add Emergency Contact"}
+            </button>
+          </form>
+        </section>
+
+        <section className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6 max-w-2xl">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-black">Ratings & Reviews</h2>
+            {avgRating !== null && totalRatings > 0 && (
+              <div className="flex items-center gap-1 bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
+                <Star size={14} className="text-yellow-400 fill-current" />
+                <span className="text-sm font-bold text-black">{avgRating.toFixed(1)}</span>
+                <span className="text-xs text-gray-500">({totalRatings})</span>
+              </div>
+            )}
+          </div>
+
+          {reviews.length === 0 ? (
+            <p className="text-sm text-gray-500 text-center py-6">No reviews to display yet.</p>
+          ) : (
+            <div className="space-y-4">
+              {reviews.map((rev, idx) => (
+                <div key={rev.id || idx} className="border-b border-gray-50 last:border-0 pb-4 last:pb-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-sm font-medium text-black">
+                      {rev.rater_name || "Anonymous User"}
+                    </p>
+                    <div className="flex items-center gap-1">
+                      {[...Array(5)].map((_, i) => (
+                        <Star 
+                          key={i} 
+                          size={12} 
+                          className={i < rev.rating ? "text-yellow-400 fill-current" : "text-gray-200"} 
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  {rev.comment && (
+                    <p className="text-sm text-gray-600 mt-1 italic">&quot;{rev.comment}&quot;</p>
+                  )}
+                  <p className="text-xs text-gray-400 mt-2">
+                    {new Date(rev.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
       </main>
     </div>

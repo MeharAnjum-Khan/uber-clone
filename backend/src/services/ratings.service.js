@@ -114,8 +114,24 @@ const getUserAverageRating = async (userId) => {
   };
 };
 
+/**
+ * Service: Get Received Reviews for a User
+ */
+const getUserReviews = async (userId) => {
+  const query = `
+    SELECT r.id, r.rating, r.comment, r.created_at, u.name as rater_name, u.email as rater_email
+    FROM ratings r
+    LEFT JOIN users u ON r.rater_id = u.id
+    WHERE r.rated_id = $1
+    ORDER BY r.created_at DESC;
+  `;
+  const { rows } = await pool.query(query, [userId]);
+  return rows;
+};
+
 module.exports = {
   submitRating,
   getRideRatings,
   getUserAverageRating,
+  getUserReviews,
 };

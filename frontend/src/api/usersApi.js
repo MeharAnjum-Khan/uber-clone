@@ -43,6 +43,30 @@ export const usersApi = {
     setAuthToken(token);
     return handleApiCall(() => apiClient.get(`/users/${userId}`));
   },
+
+  /**
+   * Get Emergency Contacts
+   */
+  getEmergencyContacts: (token) => {
+    setAuthToken(token);
+    return handleApiCall(() => apiClient.get('/users/me/emergency-contacts'));
+  },
+
+  /**
+   * Add Emergency Contact
+   */
+  addEmergencyContact: (token, contactData) => {
+    setAuthToken(token);
+    return handleApiCall(() => apiClient.post('/users/me/emergency-contacts', contactData));
+  },
+
+  /**
+   * Delete Emergency Contact
+   */
+  deleteEmergencyContact: (token, contactId) => {
+    setAuthToken(token);
+    return handleApiCall(() => apiClient.delete(`/users/me/emergency-contacts/${contactId}`));
+  },
 };
 
 export default usersApi;

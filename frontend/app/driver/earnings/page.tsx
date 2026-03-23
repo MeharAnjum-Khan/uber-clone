@@ -55,14 +55,18 @@ export default function DriverEarningsPage() {
 
       list.forEach((ride) => {
         if (ride.status !== "completed") return;
-        if (!ride.completed_at || ride.estimated_fare == null) return;
+        
+        const targetDate = ride.completed_at || ride.requested_at;
+        if (!targetDate || ride.estimated_fare == null) return;
 
-        const completedDate = new Date(ride.completed_at);
+        const completedDate = new Date(targetDate);
+        const fare = Number(ride.estimated_fare);
+
         if (completedDate.toDateString() === todayString) {
-          todayTotal += ride.estimated_fare;
+          todayTotal += fare;
         }
         if (completedDate >= startOfWeek) {
-          weekTotal += ride.estimated_fare;
+          weekTotal += fare;
         }
         completedCount += 1;
       });
@@ -99,8 +103,8 @@ export default function DriverEarningsPage() {
     }
   };
 
-  const formatMoney = (amount: number) => {
-    return `₹${amount.toFixed(2)}`;
+  const formatMoney = (amount: number | string) => {
+    return `₹${Number(amount).toFixed(2)}`;
   };
 
   return (

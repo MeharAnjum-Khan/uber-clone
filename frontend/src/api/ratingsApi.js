@@ -12,10 +12,18 @@ export const ratingsApi = {
   },
 
   /**
-   * Get User Reviews
+   * Get User Received Reviews (mine)
    */
   getUserReviews: async (token) => {
     setAuthToken(token);
-    return handleApiCall(() => apiClient.get('/api/ratings/user'));
+    return handleApiCall(() => apiClient.get('/ratings/mine'));
+  },
+
+  /**
+   * Get User Average Rating
+   */
+  getUserAverage: async (token, userId) => {
+    setAuthToken(token);
+    return handleApiCall(() => apiClient.get(`/ratings/user/${userId}/average`));
   }
 };

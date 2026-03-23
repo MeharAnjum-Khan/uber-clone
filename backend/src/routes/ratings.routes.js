@@ -13,4 +13,7 @@ router.get('/ride/:rideId', verifyToken, authMiddleware, ratingsController.getRi
 // Note: This might be public or protected. Assuming protected to keep consistency with other modules.
 router.get('/user/:userId/average', verifyToken, authMiddleware, ratingsController.getUserAverage);
 
+// GET /ratings/mine - get logged in user's received reviews
+router.get('/mine', verifyToken, authMiddleware, ratingsController.getUserReviews);
+
 module.exports = router;

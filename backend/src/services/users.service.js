@@ -106,9 +106,39 @@ const getUserById = async (id) => {
   return rows[0];
 };
 
+const getEmergencyContacts = async (userId) => {
+  const query = 'SELECT * FROM emergency_contacts WHERE user_id = $1 ORDER BY created_at ASC';
+  const { rows } = await pool.query(query, [userId]);
+  return rows;
+};
+
+const addEmergencyContact = async (userId, contact) => {
+  const { name, phone, relation } = contact;
+  const query = `
+    INSERT INTO emergency_contacts (user_id, name, phone, relation, created_at)
+    VALUES ($1, $2, $3, $4, NOW())
+    RETURNING *;
+  `;
+  const values = [userId, name, phone, relation];
+  const { rows } = await pool.query(query, values);
+  return rows[0];
+};
+
+const deleteEmergencyContact = async (userId, contactId) => {
+  const query = 'DELETE FROM emergency_contacts WHERE id = $1 AND user_id = $2 RETURNING *';
+  const { rowCount } = await pool.query(query, [contactId, userId]);
+  if (rowCount === 0) {
+    throw new Error('Contact not found');
+  }
+  return true;
+};
+
 module.exports = {
   syncUser,
   getUserProfile,
   updateUserProfile,
   getUserById,
+  getEmergencyContacts,
+  addEmergencyContact,
+  deleteEmergencyContact
 };
