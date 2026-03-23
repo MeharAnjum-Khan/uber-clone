@@ -62,6 +62,15 @@ const triggerSOS = async (userId, rideId, lat, lng) => {
     ...alert,
     notified_contacts_count: contacts.length
   };
+};
+
+/**
+ * Service: Get SOS Alerts for a Ride
+ */
+const getRideAlerts = async (rideId, requesterId) => {
+  // 1. Fetch Ride to check permissions
+  // (Could be done with a JOIN, but explicit check is clearer)
+  const rideQuery = 'SELECT rider_id, driver_id FROM rides WHERE id = $1';
   const { rows: rides } = await pool.query(rideQuery, [rideId]);
 
   if (rides.length === 0) {
